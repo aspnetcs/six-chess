@@ -1,0 +1,77 @@
+MAIN
+    SUB
+        NAME 对弈
+        ITEM
+            NAME 选择棋种
+            ID 40100
+            FUNCTION 0 -1
+        ENDI
+        ITEM
+            NAME 对弈开始
+            ID 41000
+            FUNCTION 0 11
+        ENDI
+        ITEM
+            NAME 结束对弈
+            ID 41001
+            FUNCTION 0 12
+        ENDI
+        ITEM
+            NAME 退出
+            ID 41002
+            FUNCTION 0 0
+        ENDI
+    ENDS
+    SUB
+        NAME 引擎
+        SUB
+            NAME 加载
+            ITEM
+                NAME 黑方引擎
+                ID 41003
+                FUNCTION 0 21
+            ENDI
+            ITEM
+                NAME 白方引擎
+                ID 41004
+                FUNCTION 0 26
+            ENDI
+        ENDS
+        SUB
+            NAME 卸载
+            ITEM
+                NAME 黑方引擎
+                ID 41005
+                FUNCTION 0 22
+            ENDI
+            ITEM
+                NAME 白方引擎
+                ID 41006
+                FUNCTION 0 27
+            ENDI
+        ENDS
+    ENDS
+    ITEM
+        NAME 截图
+        ID 41007
+        FUNCTION 0 6
+    ENDI
+    SUB
+        NAME 网络
+        ITEM
+            NAME 启动网络对战
+            ID 41008
+            FUNCTION 0 41
+        ENDI
+        ITEM
+            NAME 关闭网络对战
+            ID 41009
+            FUNCTION 0 42
+        ENDI
+        ITEM
+            NAME 网络设置
+            ID 41010
+            FUNCTION 0 43
+        ENDI
+    ENDS
+ENDM
