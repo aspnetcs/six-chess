@@ -35,95 +35,828 @@ struct point {
 };
 
 //函数声明
-directs compute(int board[29][29], int x, int y, int side);
-int markslef(directs s);
-int markenemy(directs s);
-void copy(int board1[29][29], int board2[29][29]);
-void initialize(int board[29][29]);
+void copy(int board1[19][19], int board2[19][19]);
+int markslef(int* result);
+int markenemy(int *result);
+
+void analyse(int thearray[19], int side, int *result);
+int* analyse1(int board[19][19], int side);//x,y为当前棋子位置
+void analyse_horizontal(int board[19][19], int*result, int side);//"  —  "
+void analyse_vertical(int board[19][19], int*result, int side);//"  丨  "
+void analyse_oblique1(int board[19][19], int*result, int side);//"  \  "
+void analyse_oblique2(int board[19][19], int*result, int side);//"  /  "
+bool surround(int board[19][19], int x, int y, int side);//用来判断该子周围两格内是不是空
+
+bool surround(int board[19][19], int x, int y, int side)//周围有棋子返回ture，全是空白返回false
+{
+	for (int i = -3; i < 4; i++)
+	{
+		if (x + i > 18)
+			break;
+		for (int j = -3; j < 4; j++)
+		{
+			while (x+i < 0)
+				i += 1;
+			while (y+j < 0)
+				j += 1;
+			if (i == 0 & j == 0)
+				j += 1;
+			if (y + j > 18)
+				break;
+			if (board[x + i][y + j] == WHITE || board[x + i][y + j] == BLACK)
+				return true;
+		}
+	}
+	return false;
+}
+
+void analyse_horizontal(int board[19][19], int*result, int side)
+{
+	int thearray[19];
+	for (int x = 0; x < 19; x++)
+	{
+		for (int y = 0; y < 19; y++)
+		{
+			if (board[x][y] == side)
+			{
+				for (int l = 0; l < 19; l++)
+					thearray[l] = board[x][l];
+				analyse(thearray, side, result);
+				break;
+			}
+		}
+	}
+}
+void analyse_vertical(int board[19][19], int*result, int side)
+{
+	int thearray[19];
+	for (int x = 0; x < 19; x++)
+	{
+		for (int y = 0; y < 19; y++)
+		{
+			if (board[y][x] == side)
+			{
+				for (int l = 0; l < 19; l++)
+					thearray[l] = board[l][x];
+				analyse(thearray, side, result);
+				break;
+			}
+		}
+	}
+}
+void analyse_oblique1(int board[19][19], int*result, int side)//"  \  "
+{
+	int thearray[19];
+	for (int x = 5; x < 19; x++)
+	{
+		int judge = 0;
+		for (int k = 0; k < 19; k++)
+			thearray[k] = -1;
+		for (int y = 0; y <= x; y++)
+		{
+			if (board[y][18 - x + y] == side)
+			{
+				judge = 1;
+				break;
+			}
+		}
+		if (judge == 1)
+		{
+			for (int y = 0; y <= x; y++)
+				thearray[y] = board[y][18 - x + y];
+			analyse(thearray, side, result);
+		}
+	}
+	for (int x = 1; x < 14; x++)
+	{
+		int judge = 0;
+		for (int k = 0; k < 19; k++)
+			thearray[k] = -1;
+		for (int y = 0; y <= 18 - x; y++)
+		{
+			if (board[x + y][y] == side)
+			{
+				judge = 1;
+				break;
+			}
+		}
+		if (judge == 1)
+		{
+			for (int y = 0; y <= 18 - x; y++)
+				thearray[y] = board[x + y][y];
+			analyse(thearray, side, result);
+		}
+	}
+}
+void analyse_oblique2(int board[19][19], int*result, int side)//"  /  "
+{
+	int thearray[19];
+	for (int x = 5; x < 19; x++)
+	{
+		int judge = 0;
+		for (int k = 0; k < 19; k++)
+			thearray[k] = -1;
+		for (int y = 0; y <= x; y++)
+		{
+			if (board[y][x - y] == side)
+			{
+				judge = 1;
+				break;
+			}
+		}
+		if (judge == 1)
+		{
+			for (int y = 0; y <= x; y++)
+				thearray[y] = board[y][x - y];
+			analyse(thearray, side, result);
+		}
+	}
+	for (int x = 1; x < 14; x++)
+	{
+		int judge = 0;
+		for (int k = 0; k < 19; k++)
+			thearray[k] = -1;
+		for (int y = 0; y <= 18 - x; y++)
+		{
+			if (board[x + y][18 - y] == side)
+			{
+				judge = 1;
+				break;
+			}
+		}
+		if (judge == 1)
+		{
+			for (int y = 0; y <= 18 - x; y++)
+				thearray[y] = board[x + y][18 - y];
+			analyse(thearray, side, result);
+		}
+	}
+}
+
+void analyse(int thearray[19], int side, int *result)
+{
+	//1&&2：六连，长连
+	int judge_continuous = 0;//用于判断多少个同类棋子连续
+	for (int i = 0; i < 19; i++)
+	{
+		if (thearray[i] == side)
+		{
+			judge_continuous += 1;
+			if (judge_continuous == 6)
+			{
+				result[0] += 1;
+				for (int j = 0; j < 6; j++)
+					thearray[i - j] = 1 - side;
+			}
+			if (judge_continuous > 6 && ((i < 18 && thearray[i + 1] != side) || i == 18))
+			{
+				result[1] += 1;
+				for (int j = 0; j < judge_continuous; j++)
+				{
+					if (thearray[i - j] == side)
+						thearray[i - j] = -1;
+				}
+			}
+		}
+		else
+			judge_continuous = 0;
+	}
+
+	//3：活5
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		if (i > 5 && judge_continuous == 5)
+		{
+			if (thearray[i] == EMPTY && thearray[i - 6] == EMPTY)//两头为空
+			{
+				result[2] += 1;
+				for (int j = 1; j < 6; j++)
+				{
+					if (thearray[i - j] == side)
+						thearray[i - j] = -1;
+				}
+			}
+		}
+		if (thearray[i] == side)
+			judge_continuous += 1;
+		else
+			judge_continuous = 0;
+	}
+	//4：眠5②：__OO__OOO__
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == side || thearray[i] == EMPTY)
+		{
+			if (thearray[i] == EMPTY)
+				judgeempty += 1;
+			i += 1;
+			judge_continuous += 1;
+			if (i > 14)
+				break;
+			int tempi = i + 5;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+				{
+					judge_continuous += 1;
+					if (thearray[i] == EMPTY)
+						judgeempty += 1;
+				}
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here4;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (judge_continuous == 6 && judgeempty == 1)
+		{
+			result[3] += 1;
+			for (int j = 1; j < 7; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here4:		i = i;
+	}
+	//5：死5
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == 1 - side)
+		{
+			i += 1;
+			if (i > 14)
+				break;
+			int tempi = i + 5;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+					judge_continuous += 1;
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here5;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (i < 19 && judge_continuous == 5 && thearray[i] == 1 - side)
+		{
+			result[4] += 1;
+			for (int j = 1; j < 6; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here5:i = i;
+	}
+	//6：活4
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		if (i > 4 && judge_continuous == 4)
+		{
+			if (thearray[i] == EMPTY && thearray[i - 5] == EMPTY)//两头为空
+			{
+				result[5] += 1;//不需要跳出，因为可以同时存在两个活4，接下来继续判断
+				for (int j = 1; j < 5; j++)
+				{
+					if (thearray[i - j] == side)
+						thearray[i - j] = -1;
+				}
+			}
+		}
+		if (thearray[i] == side)
+			judge_continuous += 1;
+		else
+			judge_continuous = 0;
+	}
+	//7：眠4：__OO____OO__类似
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == side || thearray[i] == EMPTY)
+		{
+			if (thearray[i] == EMPTY)
+				judgeempty += 1;
+			i += 1;
+			judge_continuous += 1;
+			if (i > 14)
+				break;
+			int tempi = i + 5;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+				{
+					judge_continuous += 1;
+					if (thearray[i] == EMPTY)
+						judgeempty += 1;
+				}
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here7;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (judge_continuous == 6 && judgeempty == 2)
+		{
+			result[6] += 1;
+			for (int j = 1; j < 7; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here7:i = i;
+	}
+	//8：死4
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == 1 - side)
+		{
+			i += 1;
+			if (i > 14)
+				break;
+			int tempi = i + 4;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+					judge_continuous += 1;
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here8;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (i < 19 && judge_continuous == 4 && thearray[i] == 1 - side)
+		{
+			result[7] += 1;
+			for (int j = 1; j < 5; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here8:i = i;
+	}
+	//9：活3
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		if (i > 3 && judge_continuous == 3)
+		{
+			if (thearray[i] == EMPTY && thearray[i - 4] == EMPTY)//两头为空
+			{
+				result[8] += 1;//不需要跳出，因为可以同时存在两个活3，接下来继续判断
+				for (int j = 1; j < 4; j++)
+				{
+					if (thearray[i - j] == side)
+						thearray[i - j] = -1;
+				}
+			}
+		}
+		if (thearray[i] == side)
+			judge_continuous += 1;
+		else
+			judge_continuous = 0;
+	}
+	//10：朦胧3：__O__O__O__     __OO____O__
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == EMPTY)
+		{
+			i += 1;
+			if (i > 13)
+				break;
+			int tempi = i + 5;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+				{
+					judge_continuous += 1;
+					if (thearray[i] == EMPTY)
+						judgeempty += 1;
+				}
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here10;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (judge_continuous == 5 && judgeempty == 2 && thearray[i] == EMPTY)
+		{
+			result[9] += 1;
+			for (int j = 1; j < 6; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here10:i = i;
+	}
+	//11：眠3：__O__OO__
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == side || thearray[i] == EMPTY)
+		{
+			if (thearray[i] == EMPTY)
+				judgeempty += 1;
+			i += 1;
+			judge_continuous += 1;
+			if (i > 14)
+				break;
+			int tempi = i + 5;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+				{
+					judge_continuous += 1;
+					if (thearray[i] == EMPTY)
+						judgeempty += 1;
+				}
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here11;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (judge_continuous == 6 && judgeempty == 3)
+		{
+			result[10] += 1;
+			for (int j = 1; j < 7; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here11:i = i;
+	}
+	//12：死3
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == 1 - side)
+		{
+			i += 1;
+			if (i > 15)
+				break;
+			int tempi = i + 3;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+					judge_continuous += 1;
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here12;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (i < 19 && judge_continuous == 3 && thearray[i] == 1 - side)
+		{
+			result[11] += 1;
+			for (int j = 1; j < 4; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here12:i = i;
+	}
+	//13：活2：__OO__
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		if (i > 2 && judge_continuous == 2)
+		{
+			if (thearray[i] == EMPTY && thearray[i - 3] == EMPTY)//两头为空
+			{
+				result[12] += 1;//不需要跳出，因为可以同时存在两个活3，接下来继续判断
+				for (int j = 1; j < 3; j++)
+				{
+					if (thearray[i - j] == side)
+						thearray[i - j] = -1;
+				}
+			}
+		}
+		if (thearray[i] == side)
+			judge_continuous += 1;
+		else
+			judge_continuous = 0;
+	}
+	//14：眠2：六个非X其中两个O
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == side || thearray[i] == EMPTY)
+		{
+			if (thearray[i] == EMPTY)
+				judgeempty += 1;
+			i += 1;
+			judge_continuous += 1;
+			if (i > 14)
+				break;
+			int tempi = i + 5;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+				{
+					judge_continuous += 1;
+					if (thearray[i] == EMPTY)
+						judgeempty += 1;
+				}
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here14;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (judge_continuous == 6 && judgeempty == 4)
+		{
+			result[13] += 1;
+			for (int j = 1; j < 7; j++)
+			{
+				if (thearray[i - j] == side)
+					thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here14:i = i;
+	}
+	//15：死2
+	judge_continuous = 0;//判断值归零
+	for (int i = 0; i < 19; i++)
+	{
+		int recover_i = i;
+		int judgeempty = 0;
+		if (thearray[i] == 1 - side)
+		{
+			i += 1;
+			if (i > 16)
+				break;
+			int tempi = i + 2;
+			for (i; i < tempi; i++)
+			{
+				if (thearray[i] == side || thearray[i] == EMPTY)
+					judge_continuous += 1;
+				else if (thearray[i] == -1)
+				{
+					while (i < 18 && thearray[i + 1] != -1)
+						i += 1;
+					judge_continuous = 0;
+					goto here15;
+				}
+				else
+				{
+					i = recover_i;
+					break;
+				}
+			}
+		}
+		if (i < 19 && judge_continuous == 2 && thearray[i] == 1 - side)
+		{
+			result[14] += 1;
+			for (int j = 1; j < 3; j++)
+			{
+				if(thearray[i-j]==side)
+				thearray[i - j] = -1;
+			}
+		}
+		else
+		{
+			judge_continuous = 0;
+			i = recover_i;
+		}
+	here15:i = i;
+	}
+}
 
 
-point* AI(int board[29][29], int side) {
+
+
+int* analyse1(int board[19][19], int side)//x,y为当前棋子位置
+{
+	int *result = new int[15];//15种棋型
+	for (int i = 0; i < 15; i++)
+		result[i] = 0;
+	analyse_horizontal(board, result, side);
+	analyse_vertical(board, result, side);
+	analyse_oblique1(board, result, side);
+	analyse_oblique2(board, result, side);
+	return result;
+}
+
+
+
+
+point* AI(int board[19][19], int side) {
 	int i, j, k;
 	int marks[361] = { 0 };//i*19+j         所有点的分值
 	int temp_max_mark = 0;
 	int temp_max_j = 0;
-	point *max=new point[15];//分值最高的15个点
+	point *max = new point[360];//分值最高的15个点
 	int enemy_side;
-	int temp_board[29][29];
+	int temp_board[19][19];
 
 	if (side == BLACK)enemy_side = WHITE;
 	else enemy_side = BLACK;
 
-	for (i = 0; i < 15; i++) {
+	for (i = 0; i < 360; i++) {
 		max[i].x = 0;
 		max[i].y = 0;
-		max[i].mark = 0;
+		max[i].mark = -1;
 	}
-
-	for (i = 5; i < 24; i++) {
-		for (j = 5; j < 24; j++) {
-			if (board[i][j] == EMPTY) { //只考虑棋盘的空位
-				marks[(i - 5) * 19 + (j - 5)] = markslef(compute(board, i, j, side)) + markenemy(compute(board, i, j, enemy_side));
+	int maxcount = 0;
+	for (i = 0; i < 19; i++) {
+		for (j = 0; j < 19; j++) {
+			if (board[i][j] == EMPTY&&surround(board,i,j,side)) { //只考虑棋盘的空位
+				{
+					int boardtemp[19][19];
+					copy(board, boardtemp);
+					int mark_enemy1 = markenemy(analyse1(boardtemp, enemy_side));
+					boardtemp[i][j] = side;
+					int mark_self = markslef(analyse1(boardtemp, side));
+					boardtemp[i][j] = enemy_side;
+					int mark_enemy2 = markenemy(analyse1(boardtemp, enemy_side));
+					max[maxcount].mark = mark_self + mark_enemy2-mark_enemy1;
+					max[maxcount].x = i;
+					max[maxcount].y = j;
+					maxcount += 1;
+				}
 			}
 		}
 	}
 
-	for (i = 0; i < 15; i++) { //在361个数中选出15个最大的，并记录坐标
-		for (j = i; j < 361; j++) {
-			if (marks[j] > temp_max_mark) {
-				temp_max_mark = marks[j];
-				temp_max_j = j; //保存坐标
-			}
-		}
-		marks[i] = temp_max_mark;
-		max[i].mark = temp_max_mark;
-		max[i].x = temp_max_j / 19; //向下取整
-		max[i].y = temp_max_j % 19;
-		temp_max_mark = 0;
-		marks[temp_max_j] = 0;//将本轮循环找到的最大值在marks数组中归零，避免下轮循环再次找到这个数
-	}
-	//以上完成第一步的选择
-	//以下决策树未写，求补充
 
 	return max;
 }
 
 //决策树：
-int* AItree(int board[29][29], int side, point* max)
+int* AItree(int board[19][19], int side, point* max)
 {
-	int *result=new int[4];
-	point *maxtree=new point[15];//找到分数和最大的15个点
-	for (int i = 0; i < 15; i++)
-		maxtree[i].mark = maxtree[i].x = maxtree[i].y = 0;//赋初值0
-	int a = board[0][0];
-	for (int i = 0; i < 15; i++)
+	int *result = new int[4];
+	int enemy_side = 1 - side;
+	point *maxtree = new point[360];//找到分数和最大的15个点
+	for (int i = 0; i < 360; i++)
+		maxtree[i].mark = maxtree[i].x = maxtree[i].y = -1;//赋初值0
+	for (int i = 0; i < 360; i++)
 	{
-		int chessboard_tree[29][29] = { 0 };
-		initialize(chessboard_tree);
-		
-		for (int p = 0; p < 29; p++)
-		{
-			for (int q = 0; q < 29; q++)
-				chessboard_tree[p][q] = board[p][q];
-		}
-		chessboard_tree[max[i].x+5][max[i].y+5] = side;
-
+		int chessboard_tree[19][19] = { 0 };
+		copy(board, chessboard_tree);
+		if (max[i].mark >= 0)
+			chessboard_tree[max[i].x][max[i].y] = side;
+		else
+			break;
 		int marks[361] = { 0 };
-		for (int k = 5; k < 24; k++) {
-			for (int l = 5; l < 24; l++) {
-				if (chessboard_tree[k][l] == EMPTY) { //只考虑棋盘的空位
-					marks[(k - 5) * 19 + (l - 5)] = markslef(compute(chessboard_tree, k, l, side)) + markenemy(compute(chessboard_tree, k, l, 1-side));
+		for (int k = 0; k < 19; k++) {
+			for (int l = 0; l < 19; l++) {
+				if (chessboard_tree[k][l] == EMPTY&&surround(chessboard_tree,k,l,side)) { //只考虑棋盘的空位
+					if (k == 4 && l == 9&&max[i].x==4&&max[i].y==4)
+						k = k;
+					int boardtemp[19][19];
+					copy(chessboard_tree, boardtemp);
+					int mark_enemy1 = markenemy(analyse1(boardtemp, enemy_side));
+					boardtemp[k][l] = side;
+					int mark_self = markslef(analyse1(boardtemp, side));
+					boardtemp[k][l] = enemy_side;
+					int mark_enemy2 = markenemy(analyse1(boardtemp, enemy_side));
+					marks[k * 19 + l] = mark_self + mark_enemy2 - mark_enemy1;
 				}
 			}
 		}
 		point tempmax;
+		tempmax.mark = tempmax.x = tempmax.y = 0;
 		int aitree_temp_max = 0;
 		for (int k = 0; k < 361; k++)//找到分数最大的点
 		{
 			if (marks[k] > aitree_temp_max)
 			{
 				aitree_temp_max = marks[k];
-				tempmax.x = k / 19; 
+				tempmax.x = k / 19;
 				tempmax.y = k % 19;
 				tempmax.mark = marks[k];
 			}
@@ -133,260 +866,106 @@ int* AItree(int board[29][29], int side, point* max)
 		maxtree[i].mark = tempmax.mark;
 	}
 	int aitree_temp_max = 0;
-	for (int i = 0; i < 15; i++)//找到最大的分数和的两步棋的坐标
+	for (int i = 0; i < 360; i++)//找到最大的分数和的两步棋的坐标
 	{
-		if (max[i].mark + maxtree[i].mark > aitree_temp_max)
+		if (max[i].mark >= 0)
 		{
-			result[0] = max[i].x;
-			result[1] = max[i].y;
-			result[2] = maxtree[i].x;
-			result[3] = maxtree[i].y;
-			aitree_temp_max = max[i].mark + maxtree[i].mark;
+			if (max[i].mark + maxtree[i].mark > aitree_temp_max)
+			{
+				result[0] = max[i].x;
+				result[1] = max[i].y;
+				result[2] = maxtree[i].x;
+				result[3] = maxtree[i].y;
+				aitree_temp_max = max[i].mark + maxtree[i].mark;
+			}
 		}
+		else
+			break;
 	}
 	return result;
 }
 
-int markslef(directs s) { //根据directs内的各属性打分(自己)
-/*死X：0分
-  活1：4分 眠1：2分
-  活2：16分 眠2：3分
-  活3：64分 眠3：32分
-  活4：512分 眠4：52分
-  活5：512分 眠5：256分
-  6：9999分
+int markslef(int* result) { //根据result内的各属性打分(自己)
+/*1.六连:10000
+2.长连:10000
+3.活5：128
+4.眠5：31
+5.死5:0
+6.活4:1024
+7:眠4:512
+8死4:0
+9.活3:256
+10.朦胧3：32
+11.眠3：32
+12.死3：0
+13.活2：16
+14.眠2：3
+15.死2: 0
 */
 	int sum = 0;
-	int i;
-	for (i = 0; i < 4; i++) {
-		if (s.live[i] == 0) {//死
-			if (s.direct[i] >= 6)sum += 9999;
-			else sum += 0;
-		}
-		else if (s.live[i] == 1) { //眠
-			if (s.direct[i] == 1)sum += 2;
-			else if (s.direct[i] == 2)sum += 3;
-			else if (s.direct[i] == 3)sum += 32;
-			else if (s.direct[i] == 4)sum += 52;
-			else if (s.direct[i] == 5)sum += 256;
-			else if (s.direct[i] >= 6)sum += 9999;
-		}
-		else { //活
-			if (s.direct[i] == 1)sum += 4;
-			else if (s.direct[i] == 2)sum += 16;
-			else if (s.direct[i] == 3)sum += 64;
-			else if (s.direct[i] == 4)sum += 512;
-			else if (s.direct[i] == 5)sum += 512;
-			else if (s.direct[i] >= 6)sum += 9999;
-		}
-	}
+	sum += result[0] * 10000;
+	sum += result[1] * 10000;
+	sum += result[2] * 128;
+	sum += result[3] * 31;
+	sum += result[4] * 0;
+	sum += result[5] * 1024;
+	sum += result[6] * 512;
+	sum += result[7] * 0;
+	sum += result[8] * 256;
+	sum += result[9] * 32;
+	sum += result[10] * 31;
+	sum += result[11] * 0;
+	sum += result[12] * 16;
+	sum += result[13] * 3;
+	sum += result[14] * 0;
 	return sum;
 }
 
-int markenemy(directs s) { //根据directs内的各属性打分（堵人）
-/*死X：0分
-  活1：4分 眠1：2分
-  活2：16分 眠2：3分
-  活3：64分 眠3：32分
-  活4：256分 眠4：52分
-  活5：512分 眠5：1024分
-  6：5000分
+int markenemy(int *result) { //根据result内的各属性打分（堵人）
+/*1.六连:5000
+2.长连:5000
+3.活5：2048
+4.眠5：1024
+5.死5:0
+6.活4:1024
+7:眠4:512
+8死4:0
+9.活3:256
+10.朦胧3：32
+11.眠3：32
+12.死3：0
+13.活2：16
+14.眠2：3
+15.死2: 0
 */
 	int sum = 0;
-	int i;
-	for (i = 0; i < 4; i++) {
-		if (s.live[i] == 0) {//死
-			if (s.direct[i] >= 6)sum += 9999;
-			else sum += 0;
-		}
-		else if (s.live[i] == 1) { //眠
-			if (s.direct[i] == 1)sum += 2;
-			else if (s.direct[i] == 2)sum += 3;
-			else if (s.direct[i] == 3)sum += 32;
-			else if (s.direct[i] == 4)sum += 52;
-			else if (s.direct[i] == 5)sum += 1024;
-			else if (s.direct[i] >= 6)sum += 5000;
-		}
-		else { //活
-			if (s.direct[i] == 1)sum += 4;
-			else if (s.direct[i] == 2)sum += 16;
-			else if (s.direct[i] == 3)sum += 64;
-			else if (s.direct[i] == 4)sum += 256;
-			else if (s.direct[i] == 5)sum += 512;
-			else if (s.direct[i] >= 6)sum += 5000;
-		}
-	}
+	sum += result[0] * 5000;
+	sum += result[1] * 5000;
+	sum += result[2] * 2048;
+	sum += result[3] * 1024;
+	sum += result[4] * 0;
+	sum += result[5] * 1024;
+	sum += result[6] * 512;
+	sum += result[7] * 0;
+	sum += result[8] * 256;
+	sum += result[9] * 32;
+	sum += result[10] * 31;
+	sum += result[11] * 0;
+	sum += result[12] * 16;
+	sum += result[13] * 3;
+	sum += result[14] * 0;
 	return sum;
 }
 
-void initialize(int board[29][29]) { //本函数的作用是把所有边界以外的点的初始值设为3
+
+void copy(int board1[19][19], int board2[19][19]) {
 	int i, j;
-	for (i = 0; i < 5; i++) {
-		for (j = 0; j < 29; j++) {
-			board[i][j] = 3;
-		}
-	}
-	for (i = 24; i < 29; i++) {
-		for (j = 0; j < 29; j++) {
-			board[i][j] = 3;
-		}
-	}
-	for (i = 5; i < 24; i++) {
-		for (j = 0; j < 5; j++) {
-			board[i][j] = 3;
-		}
-	}
-	for (i = 5; i < 24; i++) {
-		for (j = 24; j < 29; j++) {
-			board[i][j] = 3;
-		}
-	}
-}
-
-directs compute(int board[29][29], int x, int y, int side) { //判断落子后有多少个己方棋子相连（分四个方向）
-	//以落子点为中心，计算周围
-	int i;
-	int flag = 0;
-	int side1, side2;
-	directs s;
-	s.live[0] = 0;
-	s.live[1] = 0;
-	s.live[2] = 0;
-	s.live[3] = 0;
-
-	//横向
-	side1 = 0;
-	side2 = 0;
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x][y - i] == side) {
-			side1++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x][y - i] == EMPTY) {
-		s.live[0]++;
-	}
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x][y + i] == side) {
-			side2++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x][y + i] == EMPTY) {
-		s.live[0]++;
-	}
-	s.direct[0] = 1 + side1 + side2;
-
-
-	//竖向
-	side1 = 0;
-	side2 = 0;
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x - i][y] == side) {
-			side1++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x - i][y] == EMPTY) {
-		s.live[1]++;
-	}
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x + i][y] == side) {
-			side2++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x + i][y] == EMPTY) {
-		s.live[1]++;
-	}
-	s.direct[1] = 1 + side1 + side2;
-
-	//斜向 左上到右下
-	side1 = 0;
-	side2 = 0;
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x - i][y - i] == side) {
-			side1++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x - i][y - i] == EMPTY) {
-		s.live[2]++;
-	}
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x + i][y + i] == side) {
-			side2++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x + i][y + i] == EMPTY) {
-		s.live[2]++;
-	}
-	s.direct[2] = 1 + side1 + side2;
-
-	//斜向 左下到右上
-	side1 = 0;
-	side2 = 0;
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x + i][y - i] == side) {
-			side1++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x + i][y - i] == EMPTY) {
-		s.live[3]++;
-	}
-
-	for (i = 1; i <= 5; i++) {
-		if (board[x - i][y + i] == side) {
-			side2++;
-			if (i == 5)i++;
-		}
-		else break;
-	}
-	if (board[x - i][y + i] == EMPTY) {
-		s.live[3]++;
-	}
-	s.direct[3] = 1 + side1 + side2;
-
-	return s;
-}
-
-void copy(int board1[29][29], int board2[29][29]) {
-	int i, j;
-	for (i = 0; i < 29; i++) {
-		for (j = 0; j < 29; j++) {
+	for (i = 0; i < 19; i++) {
+		for (j = 0; j < 19; j++) {
 			board2[i][j] = board1[i][j];
 		}
 	}
 }
-
-void copy(int board1[19][19], int board2[29][29]) {
-	int i, j;
-	for (i = 0; i < 19; i++) {
-		for (j = 0; j < 19; j++) {
-			board2[i + 5][j + 5] = board1[i][j];
-		}
-	}
-}
-
-
-/*以上为本人写的函数*/
-
 
 int main()
 {
@@ -407,7 +986,7 @@ int main()
 		{
 			fflush(stdin);
 			/***********将"令狐冲"改为你的队名，不超过6个汉字或12个英文字母，否则无成绩************/
-			/*******/		printf("name gkd队\n");		/**只修改令狐冲，不要删除name空格****/
+			/*******/		printf("name gkdtest队\n");		/**只修改令狐冲，不要删除name空格****/
 			/***********将"令狐冲"改为你的队名，不超过6个汉字或12个英文字母，否则无成绩************/
 		}
 		else if (strcmp(message, "new") == 0)//建立新棋局
@@ -458,7 +1037,7 @@ int main()
 			/**********************************************************************************************************/
 			/***生成落子的坐标，保存在step结构中，第一子下在(step.first.x,step.first.y)，第一子下在(step.first.x,step.first.y)***/
 			/**************************************在下方填充代码，并替换我的示例代码*****************************************/
-			
+
 			int next_x;
 			int next_y;
 			int side = computerSide;
@@ -466,34 +1045,19 @@ int main()
 			temp = new int[4];
 
 			//生成第1子落子位置step.first.x和step.first.y
-			int chessboard[29][29] = { EMPTY };//空棋盘
-			initialize(chessboard);
-			copy(Board, chessboard); //复制系统的棋盘
-			temp=AItree( chessboard,side,AI(chessboard, side));
+			temp = AItree(Board, side, AI(Board, side));
 			step.first.x = temp[0];
 			step.first.y = temp[1];
 			step.second.x = temp[2];
 			step.second.y = temp[3];
-			/*next_x = temp[0];
-			next_y = temp[1];
-			chessboard[next_x][next_y] = computerSide;
 
-			step.first.x = next_x - 5;
-			step.first.y = next_y - 5;*/
 			Board[step.first.x][step.first.y] = computerSide;
 
 			//生成第2子落子位置step.second.x和step.second.y	
 
-			/*initialize(chessboard);
-			copy(Board, chessboard); //复制系统的棋盘
-			temp = AI(chessboard, side, 3);
-			next_x = temp[0];
-			next_y = temp[1];
 
-			step.second.x = next_x - 5;
-			step.second.y = next_y - 5;*/
 			Board[step.second.x][step.second.y] = computerSide;
-			
+
 
 			/*****************************************在上面填充代码******************************************************/
 			/**********************************************************************************************************/
@@ -518,3 +1082,6 @@ int main()
 	}
 	return 0;
 }
+
+
+
