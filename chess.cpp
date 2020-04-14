@@ -19,34 +19,57 @@ struct Step { //步结构
 };
 int Board[19][19];//存储棋盘信息，其元素值为 BLACK, WHITE, EMPTY 之一
 
-/*以下为本人写的函数*/
+/********************以下为本人写的函数**********************/
 
+/* ------开始-------- 结构体定义-------------------------- */
+/*
+定义： directs 结构体
+directX 表示每个方向有几个棋子相连
+liveX 分别表示每个方向是死0、眠1、活2
+*/
 struct directs {
-    //directX表示每个方向有几个相连，liveX表示每个方向是死0、眠1、活2
     int direct[4];
     int live[4];
 };
 
+/*
+定义：point 结构体
+x，y 表示坐标
+mark 表示该坐标的评分
+*/
 struct point {
     int x;
     int y;
     int mark;
 };
+/* ------结束-------- 结构体定义-------------------------- */
 
-//函数声明
+/* ------开始-------- 一系列函数声明 ---------------------- */
+// 棋盘复制
 void copy(int board1[19][19], int board2[19][19]);
+// 获取 自己的 和 对方的 评分
 int markslef(int* result);
 int markenemy(int *result);
 
+// 用于分析的函数
 void analyse(int thearray[19], int side, int *result);
-int* analyse1(int board[19][19], int side,int g,int h);//x,y为当前棋子位置
-void analyse_horizontal(int board[19][19], int*result, int side,int g,int h);//"  —  "
-void analyse_vertical(int board[19][19], int*result, int side,int g,int h);//"  丨  "
-void analyse_oblique1(int board[19][19], int*result, int side,int g,int h);//"  \  "
-void analyse_oblique2(int board[19][19], int*result, int side,int g,int h);//"  /  "
-bool surround(int board[19][19], int x, int y, int side);//用来判断该子周围两格内是不是空
+int* analyse1(int board[19][19], int side,int g,int h); // x,y为当前棋子位置
+void analyse_horizontal(int board[19][19], int*result, int side,int g,int h);   // 形状："  —  "
+void analyse_vertical(int board[19][19], int*result, int side,int g,int h);     // 形状："  丨  "
+void analyse_oblique1(int board[19][19], int*result, int side,int g,int h);     // 形状："  \  "
+void analyse_oblique2(int board[19][19], int*result, int side,int g,int h);     // 形状："  /  "
 
-bool surround(int board[19][19], int x, int y, int side)//周围有棋子返回ture，全是空白返回false
+// 判断该子周围两格内是不是空
+bool surround(int board[19][19], int x, int y, int side);
+/* ------结束-------- 一系列函数声明 ---------------------- */
+
+/*
+函数：判断该子周围两格内是不是空
+输入：棋盘、坐标xy，边
+输出：true / false
+有棋子返回ture，全是空白返回false
+*/
+bool surround(int board[19][19], int x, int y, int side)
 {
     for (int i = -3; i < 4; i++)
     {
@@ -69,28 +92,51 @@ bool surround(int board[19][19], int x, int y, int side)//周围有棋子返回t
     return false;
 }
 
+/*
+函数：分析，水平分析，形状："  —  "
+内部调用：analyse 函数
+输入：棋盘、类型结果的地址、边，坐标
+输出：无输出
+*/
 void analyse_horizontal(int board[19][19], int*result, int side,int g,int h)
 {
     int thearray[19];
     for (int l = 0; l < 19; l++)
         thearray[l] = board[g][l];
-    analyse(thearray, side, result);
+    analyse(thearray, side, result); // 内部调用：analyse 函数
 }
+
+/*
+函数：分析，水平分析，形状："  丨  "
+内部调用：analyse 函数
+输入：棋盘、类型结果的地址、边，坐标
+输出：无输出
+*/
 void analyse_vertical(int board[19][19], int*result, int side,int g,int h)
 {
     int thearray[19];
     for (int l = 0; l < 19; l++)
         thearray[l] = board[l][h];
-    analyse(thearray, side, result);
+    analyse(thearray, side, result); // 内部调用：analyse 函数
 }
-void analyse_oblique1(int board[19][19], int*result, int side,int g,int h)//"  \  "
+
+/*
+函数：分析，水平分析，形状："  \  "
+内部调用：analyse 函数
+输入：棋盘、类型结果的地址、边，坐标
+输出：无输出
+*/
+void analyse_oblique1(int board[19][19], int*result, int side,int g,int h) //"  \  "
 {
     int thearray[19];
+
     for (int x = 5; x < 19; x++)
     {
         int judge = 0;
+        // 初始化 thearray
         for (int k = 0; k < 19; k++)
             thearray[k] = -1;
+
         for (int y = 0; y <= x; y++)
         {
             if (g==y&&h==18-x+y)
@@ -99,14 +145,16 @@ void analyse_oblique1(int board[19][19], int*result, int side,int g,int h)//"  \
                 break;
             }
         }
+
         if (judge == 1)
         {
             for (int y = 0; y <= x; y++)
                 thearray[y] = board[y][18 - x + y];
-            analyse(thearray, side, result);
+            analyse(thearray, side, result); // 内部调用：analyse 函数
             return;
         }
     }
+
     for (int x = 1; x < 14; x++)
     {
         int judge = 0;
@@ -124,14 +172,22 @@ void analyse_oblique1(int board[19][19], int*result, int side,int g,int h)//"  \
         {
             for (int y = 0; y <= 18 - x; y++)
                 thearray[y] = board[x + y][y];
-            analyse(thearray, side, result);
+            analyse(thearray, side, result); // 内部调用：analyse 函数
             return;
         }
     }
 }
-void analyse_oblique2(int board[19][19], int*result, int side,int g,int h)//"  /  "
+
+/*
+函数：分析，水平分析，形状："  /  "
+内部调用：analyse 函数
+输入：棋盘、类型结果的地址、边，坐标
+输出：无输出
+*/
+void analyse_oblique2(int board[19][19], int*result, int side,int g,int h) //"  /  "
 {
     int thearray[19];
+
     for (int x = 5; x < 19; x++)
     {
         int judge = 0;
@@ -149,10 +205,11 @@ void analyse_oblique2(int board[19][19], int*result, int side,int g,int h)//"  /
         {
             for (int y = 0; y <= x; y++)
                 thearray[y] = board[y][x - y];
-            analyse(thearray, side, result);
+            analyse(thearray, side, result); // 内部调用：analyse 函数
             return;
         }
     }
+
     for (int x = 1; x < 14; x++)
     {
         int judge = 0;
@@ -170,27 +227,37 @@ void analyse_oblique2(int board[19][19], int*result, int side,int g,int h)//"  /
         {
             for (int y = 0; y <= 18 - x; y++)
                 thearray[y] = board[x + y][18 - y];
-            analyse(thearray, side, result);
+            analyse(thearray, side, result); // 内部调用：analyse 函数
             return;
         }
     }
 }
 
+/*
+函数：核心分析函数
+分析各种棋局情况
+内部调用：无
+输入：棋子，边，类型结果的地址
+输出：无
+*/
 void analyse(int thearray[19], int side, int *result)
 {
     //1&&2：六连，长连
     int judge_continuous = 0;//用于判断多少个同类棋子连续
     for (int i = 0; i < 19; i++)
     {
+        // 遇到同类棋子
         if (thearray[i] == side)
         {
             judge_continuous += 1;
+            // 满足 6连条件
             if (judge_continuous == 6)
             {
                 result[0] += 1;
                 for (int j = 0; j < 6; j++)
                     thearray[i - j] = 1 - side;
             }
+
             if (judge_continuous > 6 && ((i < 18 && thearray[i + 1] != side) || i == 18))
             {
                 result[1] += 1;
@@ -211,7 +278,7 @@ void analyse(int thearray[19], int side, int *result)
     {
         if (i > 5 && judge_continuous == 5)
         {
-            if (thearray[i] == EMPTY && thearray[i - 6] == EMPTY)//两头为空
+            if (thearray[i] == EMPTY && thearray[i - 6] == EMPTY) //两头为空
             {
                 result[2] += 1;
                 for (int j = 1; j < 6; j++)
@@ -226,12 +293,14 @@ void analyse(int thearray[19], int side, int *result)
         else
             judge_continuous = 0;
     }
+
     //4：眠5②：__OO__OOO__
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
     {
         int recover_i = i;
         int judgeempty = 0;
+
         if (thearray[i] == side || thearray[i] == EMPTY)
         {
             if (thearray[i] == EMPTY)
@@ -263,6 +332,7 @@ void analyse(int thearray[19], int side, int *result)
                 }
             }
         }
+
         if (judge_continuous == 6 && judgeempty == 1)
         {
             result[3] += 1;
@@ -277,14 +347,16 @@ void analyse(int thearray[19], int side, int *result)
             judge_continuous = 0;
             i = recover_i;
         }
-    here4:      i = i;
+    here4:   i = i;
     }
+
     //5：死5
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
     {
         int recover_i = i;
         int judgeempty = 0;
+
         if (thearray[i] == 1 - side)
         {
             i += 1;
@@ -309,6 +381,7 @@ void analyse(int thearray[19], int side, int *result)
                 }
             }
         }
+
         if (i < 19 && judge_continuous == 5 && thearray[i] == 1 - side)
         {
             result[4] += 1;
@@ -325,6 +398,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here5:i = i;
     }
+
     //6：活4
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -333,7 +407,7 @@ void analyse(int thearray[19], int side, int *result)
         {
             if (thearray[i] == EMPTY && thearray[i - 5] == EMPTY)//两头为空
             {
-                result[5] += 1;//不需要跳出，因为可以同时存在两个活4，接下来继续判断
+                result[5] += 1; //不需要跳出，因为可以同时存在两个活4，接下来继续判断
                 for (int j = 1; j < 5; j++)
                 {
                     if (thearray[i - j] == side)
@@ -346,6 +420,7 @@ void analyse(int thearray[19], int side, int *result)
         else
             judge_continuous = 0;
     }
+
     //7：眠4：__OO____OO__类似
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -400,6 +475,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here7:i = i;
     }
+
     //8：死4
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -446,6 +522,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here8:i = i;
     }
+
     //9：活3
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -467,6 +544,7 @@ void analyse(int thearray[19], int side, int *result)
         else
             judge_continuous = 0;
     }
+
     //10：朦胧3：__O__O__O__     __OO____O__
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -517,6 +595,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here10:i = i;
     }
+
     //11：眠3：__O__OO__
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -570,6 +649,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here11:i = i;
     }
+
     //12：死3
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -616,6 +696,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here12:i = i;
     }
+
     //13：活2：__OO__
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -637,6 +718,7 @@ void analyse(int thearray[19], int side, int *result)
         else
             judge_continuous = 0;
     }
+
     //14：眠2：六个非X其中两个O
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -690,6 +772,7 @@ void analyse(int thearray[19], int side, int *result)
         }
     here14:i = i;
     }
+
     //15：死2
     judge_continuous = 0;//判断值归零
     for (int i = 0; i < 19; i++)
@@ -739,7 +822,12 @@ void analyse(int thearray[19], int side, int *result)
 }
 
 
-
+/*
+函数：全局分析函数
+内部调用：四个方向的分析
+输入：棋局，边，坐标
+输出：分析结果
+*/
 
 int* analyse1(int board[19][19], int side,int g,int h)//x,y为当前棋子位置
 {
@@ -753,15 +841,18 @@ int* analyse1(int board[19][19], int side,int g,int h)//x,y为当前棋子位置
     return result;
 }
 
-
-
-
+/*
+函数：AI函数
+内部调用：自我评分，敌人评分
+输入：棋局，边
+输出：分值最高的15个点
+*/
 point* AI(int board[19][19], int side) {
     int i, j, k;
-    int marks[361] = { 0 };//i*19+j         所有点的分值
+    int marks[361] = { 0 }; //i*19+j         所有点的分值
     int temp_max_mark = 0;
     int temp_max_j = 0;
-    point *max = new point[360];//分值最高的15个点
+    point *max = new point[360]; //分值最高的15个点
     int enemy_side;
     int temp_board[19][19];
 
@@ -798,7 +889,12 @@ point* AI(int board[19][19], int side) {
     return max;
 }
 
-//决策树：
+/*
+函数：AI决策树
+内部调用：自我评分，敌人评分
+输入：棋局，边
+输出：result结果
+*/
 int* AItree(int board[19][19], int side, point* max)
 {
     int *result = new int[4];
@@ -868,8 +964,16 @@ int* AItree(int board[19][19], int side, point* max)
     return result;
 }
 
-int markslef(int* result) { //根据result内的各属性打分(自己)
-/*1.六连:100000
+/*
+函数：自我评分函数。根据result内的各属性打分(自己)
+内部调用：无
+输入：result
+输出：自己的得分之和
+*/
+int markslef(int* result) {
+/*
+评分标准：
+1.六连:100000
 2.长连:100000
 3.活5：128
 4.眠5：31
@@ -904,8 +1008,16 @@ int markslef(int* result) { //根据result内的各属性打分(自己)
     return sum;
 }
 
-int markenemy(int *result) { //根据result内的各属性打分（堵人）
-/*1.六连:30000
+/*
+函数：自我评分函数。根据result内的各属性打分（堵人）
+内部调用：无
+输入：result
+输出：自己的得分之和
+*/
+int markenemy(int *result) {
+/*
+评分标准：
+1.六连:30000
 2.长连:30000
 3.活5：15000
 4.眠5：12000
@@ -940,7 +1052,7 @@ int markenemy(int *result) { //根据result内的各属性打分（堵人）
     return sum;
 }
 
-
+//  棋盘复制
 void copy(int board1[19][19], int board2[19][19]) {
     int i, j;
     for (i = 0; i < 19; i++) {
@@ -993,7 +1105,6 @@ int main()
                 //此处保留老师的代码
                 step.first.x = 9;
                 step.first.y = 9;
-
 
                 /******************************在上面填充第一步行棋代码*******************************************/
 
