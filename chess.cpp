@@ -999,7 +999,7 @@ int main()
 
                 Board[step.first.x][step.first.y] = computerSide;//处理己方行棋
                 //printf("move %c%c@@\n", step.first.x + 'A', step.first.y + 'A');//输出着法
-                printf("move %c%c\n", step.first.x + 'A', step.first.y + 'A');//输出着法
+                printf("move %c%c@@\n", step.first.x + 'A', step.first.y + 'A');//输出着法
             }
         }
         else if (strcmp(message, "move") == 0)//行棋,本程序核心

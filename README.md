@@ -1,5 +1,4 @@
-# Six-Chess 六子棋盘
-六子棋AI
+# Six-Chess
 ## 核心算法
 ![Algorithm.png](https://i.loli.net/2020/04/15/pAsrfGjTShEPXUK.png)
 1. 对全局的可行位置进行分析，找到最佳落子点
