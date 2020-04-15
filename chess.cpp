@@ -927,6 +927,7 @@ int* AItree(int board[19][19], int side, point* max)
                 }
             }
         }
+
         point tempmax;
         tempmax.mark = tempmax.x = tempmax.y = 0;
         int aitree_temp_max = -1;
