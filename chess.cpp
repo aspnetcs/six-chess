@@ -48,11 +48,13 @@ bool surround(int board[19][19], int x, int y, int side);//用来判断该子周
 
 bool surround(int board[19][19], int x, int y, int side)//周围有棋子返回ture，全是空白返回false
 {
-    for (int i = -3; i < 4; i++)
+    //for (int i = -3; i < 4; i++)
+    for (int i = -1; i < 2; i++)
     {
         if (x + i > 18)
             break;
-        for (int j = -3; j < 4; j++)
+        //for (int j = -3; j < 4; j++)
+        for (int j = -1; j < 2; j++)
         {
             while (x + i < 0)
                 i += 1;
